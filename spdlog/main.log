@@ -1,0 +1,10 @@
+[file-logger][22:03:33][10842][trace   ] [main.cc:15]你好：帅威
+[file-logger][22:03:33][10842][debug   ] [main.cc:16]你好：帅威
+[file-logger][22:03:33][10842][info    ] [main.cc:17]你好：帅威
+[file-logger][22:03:33][10842][warning ] [main.cc:18]你好：帅威
+[file-logger][22:03:33][10842][critical] [main.cc:19]你好：帅威
+[2026-01-27 22:03:58.182] [file-logger] [trace] [main.cc:15]你好：帅威
+[2026-01-27 22:03:58.182] [file-logger] [debug] [main.cc:16]你好：帅威
+[2026-01-27 22:03:58.182] [file-logger] [info] [main.cc:17]你好：帅威
+[2026-01-27 22:03:58.182] [file-logger] [warning] [main.cc:18]你好：帅威
+[2026-01-27 22:03:58.182] [file-logger] [critical] [main.cc:19]你好：帅威

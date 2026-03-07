@@ -1,0 +1,8 @@
+[2026-01-24 20:10:44.079] [file-logger] [debug] 你好！帅威
+[2026-01-24 20:10:44.079] [file-logger] [info] 你好！帅威
+[2026-01-24 20:10:44.079] [file-logger] [warning] 你好！帅威
+[2026-01-24 20:10:44.079] [file-logger] [critical] 你好！帅威
+[file-logger][20:12:01][6403][debug   ] 你好！帅威
+[file-logger][20:12:01][6403][info    ] 你好！帅威
+[file-logger][20:12:01][6403][warning ] 你好！帅威
+[file-logger][20:12:01][6403][critical] 你好！帅威
