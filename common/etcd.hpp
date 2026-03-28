@@ -1,3 +1,5 @@
+#pragma once
+
 #include <etcd/KeepAlive.hpp>
 #include <etcd/Watcher.hpp>
 #include <etcd/Response.hpp>
@@ -19,7 +21,7 @@ class Registry{
             _leaseId(_keepAlive->Lease())
         {}
         ~Registry(){_keepAlive->Cancel();}
-        
+
         bool serviceRegistry(const std::string& key, const std::string& val){
             auto resp = _client->put(key,val,_leaseId).get();
             if(resp.is_ok() == false){
@@ -33,17 +35,16 @@ class Registry{
         std::shared_ptr<etcd::Client> _client;
         std::shared_ptr<etcd::KeepAlive> _keepAlive;
         uint64_t _leaseId;  // 租约时间id
-
 };
 
 
 // 服务发现客户端
 class Discovery{
     public:
-        using ptr = std::shared_ptr<Discovery>; 
+        using ptr = std::shared_ptr<Discovery>;
         using NotifyCallBack = std::function<void(std::string, std:: string)>;
         Discovery(const std::string& host,
-            const std::string &baseDir, 
+            const std::string &baseDir,
             const NotifyCallBack& put_cb,
             const NotifyCallBack& del_cb):
             _putCb(put_cb),
@@ -51,7 +52,7 @@ class Discovery{
             _client(std::make_shared<etcd::Client>(host)),
             _watcher(std::make_shared<etcd::Watcher>(
                 *_client.get(), baseDir, std::bind(&Discovery::callBack, this, std::placeholders::_1),
-                true))           
+                true))
             {
                 // 先进行服务发现，在进行服务watcher
                 auto resp = _client->ls("/service").get();
@@ -63,7 +64,7 @@ class Discovery{
                 for(int i = 0; i < sz; i++){
                     std::cout<< resp.value(i).as_string() << "可以提供" << resp.key(i) << "服务\n";
                 }
-                
+
             }
     private:
         void callBack(const etcd::Response & resp){
@@ -77,7 +78,7 @@ class Discovery{
                     if(_putCb)  _putCb(ev.kv().key(),ev.kv().as_string());
                     LOG_DEBUG("新增服务{}-{}",ev.kv().key(),ev.kv().as_string());
                 }
-                else if(ev.event_type() == etcd::Event::EventType::DELETE_){                                 
+                else if(ev.event_type() == etcd::Event::EventType::DELETE_){
                     LOG_DEBUG("下线服务{}-{}",ev.prev_kv().key(),ev.prev_kv().as_string());
                 }
             }
