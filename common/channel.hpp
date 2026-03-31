@@ -15,7 +15,7 @@ DEFINE_string(protocol, "baidu_std", "通信协议类型，默认使用brpc自�
 DEFINE_string(server_host, "127.0.0.1:8000", "服务器地址信息");
 DEFINE_int32(timeout_ms, 500, "Rpc请求超时时间-毫秒");
 DEFINE_int32(max_retry, 3, "请求重试次数");
-
+namespace wei_im{
 class ServiceChannel {
 public:
   using ChannelPtr = std::shared_ptr<brpc::Channel>;
@@ -147,3 +147,4 @@ private:
   std::unordered_set<std::string> _attention_services;
   std::unordered_map<std::string, ServiceChannel::ptr> _services;
 };
+}

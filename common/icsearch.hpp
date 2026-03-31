@@ -5,6 +5,7 @@
 #include <cpr/cpr.h>
 #include <elasticlient/client.h>
 
+namespace wei_im{
 bool Serialize(const Json::Value &val, std::string &dst)
 {
     //先定义Json::StreamWriter 工厂类 Json::StreamWriterBuilder
@@ -246,3 +247,4 @@ class ESSearch {
         Json::Value _must;
         std::shared_ptr<elasticlient::Client> _client;
 };
+}

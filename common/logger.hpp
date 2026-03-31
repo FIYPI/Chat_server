@@ -5,6 +5,7 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include <iostream>
 
+namespace wei_im{
 // 对spd的二次封装
 std::shared_ptr<spdlog::logger> g_logger;
 
@@ -29,3 +30,4 @@ void init_logger(bool mode, const std::string& filename, int32_t level)
 #define LOG_WARN(format, ...) g_logger->warn(std::string("[{}:{}]")+format, __FILE__, __LINE__, ##__VA_ARGS__)
 #define LOG_ERROR(format, ...) g_logger->error(std::string("[{}:{}]")+format, __FILE__, __LINE__, ##__VA_ARGS__)
 #define LOG_FATAL(format, ...) g_logger->critical(std::string("[{}:{}]")+format, __FILE__, __LINE__, ##__VA_ARGS__)
+}

@@ -10,7 +10,7 @@
 
 #include "logger.hpp"
 
-
+namespace wei_im{
 // 服务注册客户端
 class Registry{
     public:
@@ -93,3 +93,4 @@ class Discovery{
 
 
 };
+}
