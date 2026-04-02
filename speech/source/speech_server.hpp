@@ -34,6 +34,7 @@ class SpeechServiceImpl : public wei_im::SpeechService {
             response->set_request_id(request->request_id());
             response->set_success(true);
             response->set_recognition_result(res);
+            LOG_DEBUG("{} 语音识别成功！", request->request_id());
         }
     private:
         ASRClient::ptr _asr_client;
@@ -72,7 +73,7 @@ class SpeechServerBuilder {
             const std::string &service_name,
             const std::string &access_host) {
             _reg_client = std::make_shared<Registry>(reg_host);
-            _reg_client->serviceRegistry(service_name, access_host);
+            _reg_client->registry(service_name, access_host);
         }
         //构造RPC服务器对象
         void make_rpc_server(uint16_t port, int32_t timeout, uint8_t num_threads) {

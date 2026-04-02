@@ -41,8 +41,8 @@ int main(int argc, char *argv[])
     }
     //读取语音文件数据
     std::string file_content;
-    aip::get_file_content("16k.pcm", &file_content);
-    std::cout << file_content.size() << std::endl;
+    aip::get_file_content("../test/16k.pcm", &file_content);
+    std::cout <<"fileSize: " <<file_content.size() << std::endl;
 
     //4. 发起EchoRpc调用
     wei_im::SpeechService_Stub stub(channel.get());
