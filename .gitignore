@@ -1,1 +1,10 @@
 speech/build /
+file/build/*
+friend/build/*
+build/*
+gateway/build/*
+message/build/*
+user/build/*
+speech/build/*
+transmite/build/*
+user/test/*

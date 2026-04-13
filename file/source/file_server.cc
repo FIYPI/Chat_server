@@ -22,9 +22,9 @@ DEFINE_int32(rpc_threads, 1, "Rpc的IO线程数量");
 int main(int argc, char *argv[])
 {
     google::ParseCommandLineFlags(&argc, &argv, true);
-    bite_im::init_logger(FLAGS_run_mode, FLAGS_log_file, FLAGS_log_level);
+    wei_im::init_logger(FLAGS_run_mode, FLAGS_log_file, FLAGS_log_level);
 
-    bite_im::FileServerBuilder fsb;
+    wei_im::FileServerBuilder fsb;
     fsb.make_rpc_server(FLAGS_listen_port, FLAGS_rpc_timeout, FLAGS_rpc_threads, FLAGS_storage_path);
     fsb.make_reg_object(FLAGS_registry_host, FLAGS_base_service + FLAGS_instance_name, FLAGS_access_host);
     auto server = fsb.build();

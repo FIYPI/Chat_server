@@ -9,7 +9,7 @@
 
 
 using namespace std;
-using namespace AlibabaCloud;
+using namespace wei_im;
 
 int main( int argc, char** argv )
 {

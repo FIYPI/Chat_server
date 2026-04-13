@@ -11,8 +11,8 @@
 #include "base.pb.h"
 #include "file.pb.h"
 
-namespace bite_im{
-class FileServiceImpl : public bite_im::FileService {
+namespace wei_im{
+class FileServiceImpl : public wei_im::FileService {
     public:
         FileServiceImpl(const std::string &storage_path):
             _storage_path(storage_path){
@@ -22,8 +22,8 @@ class FileServiceImpl : public bite_im::FileService {
         }
         ~FileServiceImpl(){}
         void GetSingleFile(google::protobuf::RpcController* controller,
-                    const ::bite_im::GetSingleFileReq* request,
-                    ::bite_im::GetSingleFileRsp* response,
+                    const ::wei_im::GetSingleFileReq* request,
+                    ::wei_im::GetSingleFileRsp* response,
                     ::google::protobuf::Closure* done) {
             brpc::ClosureGuard rpc_guard(done);
             response->set_request_id(request->request_id());
@@ -45,8 +45,8 @@ class FileServiceImpl : public bite_im::FileService {
             response->mutable_file_data()->set_file_content(body);
         }
         void GetMultiFile(google::protobuf::RpcController* controller,
-                    const ::bite_im::GetMultiFileReq* request,
-                    ::bite_im::GetMultiFileRsp* response,
+                    const ::wei_im::GetMultiFileReq* request,
+                    ::wei_im::GetMultiFileRsp* response,
                     ::google::protobuf::Closure* done) {
             brpc::ClosureGuard rpc_guard(done);
             response->set_request_id(request->request_id());
@@ -70,8 +70,8 @@ class FileServiceImpl : public bite_im::FileService {
             response->set_success(true);
         }
         void PutSingleFile(google::protobuf::RpcController* controller,
-                    const ::bite_im::PutSingleFileReq* request,
-                    ::bite_im::PutSingleFileRsp* response,
+                    const ::wei_im::PutSingleFileReq* request,
+                    ::wei_im::PutSingleFileRsp* response,
                     ::google::protobuf::Closure* done) {
             brpc::ClosureGuard rpc_guard(done);
             response->set_request_id(request->request_id());
@@ -93,8 +93,8 @@ class FileServiceImpl : public bite_im::FileService {
             response->mutable_file_info()->set_file_name(request->file_data().file_name());
         }
         void PutMultiFile(google::protobuf::RpcController* controller,
-                    const ::bite_im::PutMultiFileReq* request,
-                    ::bite_im::PutMultiFileRsp* response,
+                    const ::wei_im::PutMultiFileReq* request,
+                    ::wei_im::PutMultiFileRsp* response,
                     ::google::protobuf::Closure* done) {
             brpc::ClosureGuard rpc_guard(done);
             response->set_request_id(request->request_id());
@@ -108,7 +108,7 @@ class FileServiceImpl : public bite_im::FileService {
                     LOG_ERROR("{} 写入文件数据失败！", request->request_id());
                     return;
                 }
-                bite_im::FileMessageInfo *info  = response->add_file_info();
+                wei_im::FileMessageInfo *info  = response->add_file_info();
                 info->set_file_id(fid);
                 info->set_file_size(request->file_data(i).file_size());
                 info->set_file_name(request->file_data(i).file_name());

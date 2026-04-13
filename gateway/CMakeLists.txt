@@ -1,15 +1,16 @@
 # 1. 添加cmake版本说明
 cmake_minimum_required(VERSION 3.1.3)
 # 2. 声明工程名称
-project(file_server)
+project(gateway_server)
 
-set(target "file_server")
+set(target "gateway_server")
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
 
 # 3. 检测并生成ODB框架代码
 #   1. 添加所需的proto映射代码文件名称
 set(proto_path ${CMAKE_CURRENT_SOURCE_DIR}/../proto)
-set(proto_files file.proto base.proto)
+set(proto_files base.proto user.proto file.proto friend.proto gateway.proto message.proto notify.proto speech.proto transmite.proto )
 #   2. 检测框架代码文件是否已经生成
 set(proto_hxx "")
 set(proto_cxx "")
@@ -35,16 +36,16 @@ endforeach()
 set(src_files "")
 aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/source src_files)
 # 5. 声明目标及依赖
-add_executable(${target} ${src_files} ${proto_srcs})
+add_executable(${target} ${src_files} ${proto_srcs} ${odb_srcs})
 # 7. 设置需要连接的库
-target_link_libraries(${target} -lgflags -lspdlog -lfmt -lbrpc -lssl -lcrypto -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl /usr/lib/x86_64-linux-gnu/libjsoncpp.so.19)
+target_link_libraries(${target} -lgflags 
+    -lspdlog -lfmt -lbrpc -lssl -lcrypto 
+    -lprotobuf -lleveldb -letcd-cpp-api 
+    -lodb-mysql -lodb -lodb-boost
+    -lhiredis -lredis++
+    -lcpprest -lcurl
+    -lpthread -lboost_system)
 
-
-set(test_client "file_client")
-set(test_files "")
-aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/test test_files)
-add_executable(${test_client} ${test_files} ${proto_srcs})
-target_link_libraries(${test_client} -lgtest -lgflags -lspdlog -lfmt -lbrpc -lssl -lcrypto -lprotobuf -lleveldb -letcd-cpp-api -lcpprest -lcurl /usr/lib/x86_64-linux-gnu/libjsoncpp.so.19)
 
 # 6. 设置头文件默认搜索路径
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
@@ -52,4 +53,4 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../common)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third/include)
 
 #8. 设置安装路径
-INSTALL(TARGETS ${target} ${test_client} RUNTIME DESTINATION bin)
+INSTALL(TARGETS ${target} RUNTIME DESTINATION bin)

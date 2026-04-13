@@ -11,7 +11,7 @@
 #include <iomanip>
 #include "logger.hpp"
 
-namespace bite_im {
+namespace wei_im {
 
 std::string uuid() {
     //生成一个由16位随机字符组成的字符串作为唯一ID

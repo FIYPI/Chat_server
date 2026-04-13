@@ -20,24 +20,24 @@ DEFINE_string(base_service, "/service", "服务监控根目录");
 DEFINE_string(file_service, "/service/file_service", "服务监控根目录");
 
 
-bite_im::ServiceChannel::ChannelPtr channel;
+wei_im::ServiceChannel::ChannelPtr channel;
 std::string single_file_id;
 
 TEST(put_test, single_file) {
     //1. 读取当前目录下的指定文件数据
     std::string body;
-    ASSERT_TRUE(bite_im::readFile("./Makefile", body));
+    ASSERT_TRUE(wei_im::readFile("./Makefile", body));
     //2. 实例化rpc调用客户端对象，发起rpc调用
-    bite_im::FileService_Stub stub(channel.get());
+    wei_im::FileService_Stub stub(channel.get());
 
-    bite_im::PutSingleFileReq req;
+    wei_im::PutSingleFileReq req;
     req.set_request_id("1111");
     req.mutable_file_data()->set_file_name("Makefile");
     req.mutable_file_data()->set_file_size(body.size());
     req.mutable_file_data()->set_file_content(body);
 
     brpc::Controller *cntl = new brpc::Controller();
-    bite_im::PutSingleFileRsp *rsp = new bite_im::PutSingleFileRsp();
+    wei_im::PutSingleFileRsp *rsp = new wei_im::PutSingleFileRsp();
     stub.PutSingleFile(cntl, &req, rsp, nullptr);
     ASSERT_FALSE(cntl->Failed());
     //3. 检测返回值中上传是否成功
@@ -50,20 +50,20 @@ TEST(put_test, single_file) {
 
 TEST(get_test, single_file) {
     //先发起Rpc调用，进行文件下载
-    bite_im::FileService_Stub stub(channel.get());
-    bite_im::GetSingleFileReq req;
-    bite_im::GetSingleFileRsp *rsp;
+    wei_im::FileService_Stub stub(channel.get());
+    wei_im::GetSingleFileReq req;
+    wei_im::GetSingleFileRsp *rsp;
     req.set_request_id("2222");
     req.set_file_id(single_file_id);
 
     brpc::Controller *cntl = new brpc::Controller();
-    rsp = new bite_im::GetSingleFileRsp();
+    rsp = new wei_im::GetSingleFileRsp();
     stub.GetSingleFile(cntl, &req, rsp, nullptr);
     ASSERT_FALSE(cntl->Failed());
     ASSERT_TRUE(rsp->success());
     //将文件数据，存储到文件中
     ASSERT_EQ(single_file_id, rsp->file_data().file_id());
-    bite_im::writeFile("make_file_download", rsp->file_data().file_content());
+    wei_im::writeFile("make_file_download", rsp->file_data().file_content());
 }
 
 std::vector<std::string> multi_file_id;
@@ -71,13 +71,13 @@ std::vector<std::string> multi_file_id;
 TEST(put_test, multi_file) {
     //1. 读取当前目录下的指定文件数据
     std::string body1;
-    ASSERT_TRUE(bite_im::readFile("./base.pb.h", body1));
+    ASSERT_TRUE(wei_im::readFile("./base.pb.h", body1));
     std::string body2;
-    ASSERT_TRUE(bite_im::readFile("./file.pb.h", body2));
+    ASSERT_TRUE(wei_im::readFile("./file.pb.h", body2));
     //2. 实例化rpc调用客户端对象，发起rpc调用
-    bite_im::FileService_Stub stub(channel.get());
+    wei_im::FileService_Stub stub(channel.get());
 
-    bite_im::PutMultiFileReq req;
+    wei_im::PutMultiFileReq req;
     req.set_request_id("3333");
 
     auto file_data = req.add_file_data();
@@ -91,7 +91,7 @@ TEST(put_test, multi_file) {
     file_data->set_file_content(body2);
 
     brpc::Controller *cntl = new brpc::Controller();
-    bite_im::PutMultiFileRsp *rsp = new bite_im::PutMultiFileRsp();
+    wei_im::PutMultiFileRsp *rsp = new wei_im::PutMultiFileRsp();
     stub.PutMultiFile(cntl, &req, rsp, nullptr);
     ASSERT_FALSE(cntl->Failed());
     //3. 检测返回值中上传是否成功
@@ -104,15 +104,15 @@ TEST(put_test, multi_file) {
 
 TEST(get_test, multi_file) {
     //先发起Rpc调用，进行文件下载
-    bite_im::FileService_Stub stub(channel.get());
-    bite_im::GetMultiFileReq req;
-    bite_im::GetMultiFileRsp *rsp;
+    wei_im::FileService_Stub stub(channel.get());
+    wei_im::GetMultiFileReq req;
+    wei_im::GetMultiFileRsp *rsp;
     req.set_request_id("4444");
     req.add_file_id_list(multi_file_id[0]);
     req.add_file_id_list(multi_file_id[1]);
 
     brpc::Controller *cntl = new brpc::Controller();
-    rsp = new bite_im::GetMultiFileRsp();
+    rsp = new wei_im::GetMultiFileRsp();
     stub.GetMultiFile(cntl, &req, rsp, nullptr);
     ASSERT_FALSE(cntl->Failed());
     ASSERT_TRUE(rsp->success());
@@ -121,9 +121,9 @@ TEST(get_test, multi_file) {
     ASSERT_TRUE(rsp->file_data().find(multi_file_id[1]) != rsp->file_data().end());
     auto map = rsp->file_data();
     auto file_data1 = map[multi_file_id[0]];
-    bite_im::writeFile("base_download_file1",file_data1.file_content());
+    wei_im::writeFile("base_download_file1",file_data1.file_content());
     auto file_data2 = map[multi_file_id[1]];
-    bite_im::writeFile("file_download_file2", file_data2.file_content());
+    wei_im::writeFile("file_download_file2", file_data2.file_content());
 }
 
 
@@ -132,15 +132,15 @@ int main(int argc, char *argv[])
     testing::InitGoogleTest(&argc, argv);
     google::ParseCommandLineFlags(&argc, &argv, true);
 
-    bite_im::init_logger(FLAGS_run_mode, FLAGS_log_file, FLAGS_log_level);
+    wei_im::init_logger(FLAGS_run_mode, FLAGS_log_file, FLAGS_log_level);
 
     //1. 先构造Rpc信道管理对象
-    auto sm = std::make_shared<bite_im::ServiceManager>();
+    auto sm = std::make_shared<wei_im::ServiceManager>();
     sm->declared(FLAGS_file_service);
-    auto put_cb = std::bind(&bite_im::ServiceManager::onServiceOnline, sm.get(), std::placeholders::_1, std::placeholders::_2);
-    auto del_cb = std::bind(&bite_im::ServiceManager::onServiceOffline, sm.get(), std::placeholders::_1, std::placeholders::_2);
+    auto put_cb = std::bind(&wei_im::ServiceManager::onServiceOnline, sm.get(), std::placeholders::_1, std::placeholders::_2);
+    auto del_cb = std::bind(&wei_im::ServiceManager::onServiceOffline, sm.get(), std::placeholders::_1, std::placeholders::_2);
     //2. 构造服务发现对象
-    bite_im::Discovery::ptr dclient = std::make_shared<bite_im::Discovery>(FLAGS_etcd_host, FLAGS_base_service, put_cb, del_cb);
+    wei_im::Discovery::ptr dclient = std::make_shared<wei_im::Discovery>(FLAGS_etcd_host, FLAGS_base_service, put_cb, del_cb);
     
     //3. 通过Rpc信道管理对象，获取提供Echo服务的信道
     channel = sm->choose(FLAGS_file_service);

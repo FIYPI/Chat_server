@@ -4,7 +4,7 @@
 #include <odb/nullable.hxx>
 #include <odb/core.hxx>
 
-namespace bite_im {
+namespace wei_im {
 #pragma db object table("user")
 class User {
     public:

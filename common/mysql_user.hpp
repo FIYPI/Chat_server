@@ -96,6 +96,8 @@ class UserTable {
             }
             return res;
         }
+
+        // 后续可以添加删除用户等功能
     private:
         std::shared_ptr<odb::core::database> _db;
 };
