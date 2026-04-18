@@ -8,7 +8,7 @@
 #include "etcd.hpp"     // 服务注册模块封装
 #include "logger.hpp"   // 日志模块封装
 #include "utils.hpp"    // 基础工具接口
-#include "dms_client.hpp"      // 邮件验证码客户端封装
+#include "dms.hpp"      // 短信平台SDK模块封装
 #include "channel.hpp"  // 信道管理模块封装
 
 #include "user.hxx"
@@ -148,23 +148,20 @@ class UserServiceImpl : public wei_im::UserService {
             response->set_login_session_id(ssid);
             response->set_success(true);
         }
-        bool email_check(const std::string &email) {
-            // 邮箱基本格式校验：包含 @ 符号且 @ 前后都有内容
-            if (email.empty()) return false;
-            size_t at_pos = email.find('@');
-            if (at_pos == std::string::npos) return false;
-            if (at_pos == 0 || at_pos == email.size() - 1) return false;
-            // @ 后面需要包含 . 
-            size_t dot_pos = email.find('.', at_pos);
-            if (dot_pos == std::string::npos) return false;
-            if (dot_pos == at_pos + 1 || dot_pos == email.size() - 1) return false;
+        bool phone_check(const std::string &phone) {
+            if (phone.size() != 11) return false;
+            if (phone[0] != '1') return false;
+            if (phone[1] < '3' || phone[1] > '9') return false;
+            for (int i = 2; i < 11; i++) {
+                if (phone[i] < '0' || phone[i] > '9') return false;
+            }
             return true;
         }
-        virtual void GetEmailVerifyCode(::google::protobuf::RpcController* controller,
-            const ::wei_im::EmailVerifyCodeReq* request,
-            ::wei_im::EmailVerifyCodeRsp* response,
+        virtual void GetPhoneVerifyCode(::google::protobuf::RpcController* controller,
+            const ::wei_im::PhoneVerifyCodeReq* request,
+            ::wei_im::PhoneVerifyCodeRsp* response,
             ::google::protobuf::Closure* done){
-            LOG_DEBUG("收到邮箱验证码获取请求！");
+            LOG_DEBUG("收到短信验证码获取请求！");
             brpc::ClosureGuard rpc_guard(done);
             auto err_response = [this, response](const std::string &rid, 
                 const std::string &errmsg) -> void {
@@ -173,22 +170,22 @@ class UserServiceImpl : public wei_im::UserService {
                 response->set_errmsg(errmsg);
                 return;
             };
-            // 1. 从请求中取出邮箱地址
-            std::string email = request->email();
-            // 2. 验证邮箱格式是否正确
-            bool ret = email_check(email);
+            // 1. 从请求中取出手机号码
+            std::string phone = request->phone_number();
+            // 2. 验证手机号码格式是否正确（必须以 1 开始，第二位 3~9 之间，后边 9 个数字字符）
+            bool ret = phone_check(phone);
             if (ret == false) {
-                LOG_ERROR("{} - 邮箱格式错误 - {}！", request->request_id(), email);
-                return err_response(request->request_id(), "邮箱格式错误!");
+                LOG_ERROR("{} - 手机号码格式错误 - {}！", request->request_id(), phone);
+                return err_response(request->request_id(), "手机号码格式错误!");
             }
             // 3. 生成 4 位随机验证码
             std::string code_id = uuid();
             std::string code = vcode();
-            // 4. 基于邮件客户端发送验证码
-            ret = _dms_client->send(email, code);
+            // 4. 基于短信平台 SDK 发送验证码
+            ret = _dms_client->send(phone, code);
             if (ret == false) {
-                LOG_ERROR("{} - 邮箱验证码发送失败 - {}！", request->request_id(), email);
-                return err_response(request->request_id(), "邮箱验证码发送失败!");
+                LOG_ERROR("{} - 短信验证码发送失败 - {}！", request->request_id(), phone);
+                return err_response(request->request_id(), "短信验证码发送失败!");
             }
             // 5. 构造验证码 ID，添加到 redis 验证码映射键值索引中
             _redis_codes->append(code_id, code);
@@ -196,13 +193,13 @@ class UserServiceImpl : public wei_im::UserService {
             response->set_request_id(request->request_id());
             response->set_success(true);
             response->set_verify_code_id(code_id);
-            LOG_DEBUG("获取邮箱验证码处理完成！");
+            LOG_DEBUG("获取短信验证码处理完成！");
         }
-        virtual void EmailRegister(::google::protobuf::RpcController* controller,
-            const ::wei_im::EmailRegisterReq* request,
-            ::wei_im::EmailRegisterRsp* response,
+        virtual void PhoneRegister(::google::protobuf::RpcController* controller,
+            const ::wei_im::PhoneRegisterReq* request,
+            ::wei_im::PhoneRegisterRsp* response,
             ::google::protobuf::Closure* done){
-            LOG_DEBUG("收到邮箱注册请求！");
+            LOG_DEBUG("收到手机号注册请求！");
             brpc::ClosureGuard rpc_guard(done);
             auto err_response = [this, response](const std::string &rid, 
                 const std::string &errmsg) -> void {
@@ -211,15 +208,15 @@ class UserServiceImpl : public wei_im::UserService {
                 response->set_errmsg(errmsg);
                 return;
             };
-            // 1. 从请求中取出邮箱和验证码,验证码ID
-            std::string email = request->email();
+            // 1. 从请求中取出手机号码和验证码,验证码ID
+            std::string phone = request->phone_number();
             std::string code_id = request->verify_code_id();
             std::string code = request->verify_code();
-            // 2. 检查注册邮箱是否合法
-            bool ret = email_check(email);
+            // 2. 检查注册手机号码是否合法
+            bool ret = phone_check(phone);
             if (ret == false) {
-                LOG_ERROR("{} - 邮箱格式错误 - {}！", request->request_id(), email);
-                return err_response(request->request_id(), "邮箱格式错误!");
+                LOG_ERROR("{} - 手机号码格式错误 - {}！", request->request_id(), phone);
+                return err_response(request->request_id(), "手机号码格式错误!");
             }
             // 3. 从 redis 数据库中进行验证码 ID-验证码一致性匹配
             auto vcode = _redis_codes->code(code_id);
@@ -227,22 +224,22 @@ class UserServiceImpl : public wei_im::UserService {
                 LOG_ERROR("{} - 验证码错误 - {}-{}！", request->request_id(), code_id, code);
                 return err_response(request->request_id(), "验证码错误!");
             }
-            // 4. 通过数据库查询判断邮箱是否已经注册过
-            auto user = _mysql_user->select_by_email(email);
+            // 4. 通过数据库查询判断手机号是否已经注册过
+            auto user = _mysql_user->select_by_phone(phone);
             if (user) {
-                LOG_ERROR("{} - 该邮箱已注册过用户 - {}！", request->request_id(), email);
-                return err_response(request->request_id(), "该邮箱已注册过用户!");
+                LOG_ERROR("{} - 该手机号已注册过用户 - {}！", request->request_id(), phone);
+                return err_response(request->request_id(), "该手机号已注册过用户!");
             }
             // 5. 向数据库新增用户信息
             std::string uid = uuid();
-            user = std::make_shared<User>(uid, email);
+            user = std::make_shared<User>(uid, phone);
             ret = _mysql_user->insert(user);
             if (ret == false) {
-                LOG_ERROR("{} - 向数据库添加用户信息失败 - {}！", request->request_id(), email);
+                LOG_ERROR("{} - 向数据库添加用户信息失败 - {}！", request->request_id(), phone);
                 return err_response(request->request_id(), "向数据库添加用户信息失败!");
             }
             // 6. 向 ES 服务器中新增用户信息
-            ret = _es_user->appendData(uid, email, uid, "", "");
+            ret = _es_user->appendData(uid, phone, uid, "", "");
             if (ret == false) {
                 LOG_ERROR("{} - ES搜索引擎新增数据失败！", request->request_id());
                 return err_response(request->request_id(), "ES搜索引擎新增数据失败！");
@@ -251,11 +248,11 @@ class UserServiceImpl : public wei_im::UserService {
             response->set_request_id(request->request_id());
             response->set_success(true);
         }
-        virtual void EmailLogin(::google::protobuf::RpcController* controller,
-            const ::wei_im::EmailLoginReq* request,
-            ::wei_im::EmailLoginRsp* response,
+        virtual void PhoneLogin(::google::protobuf::RpcController* controller,
+            const ::wei_im::PhoneLoginReq* request,
+            ::wei_im::PhoneLoginRsp* response,
             ::google::protobuf::Closure* done){
-            LOG_DEBUG("收到邮箱登录请求！");
+            LOG_DEBUG("收到手机号登录请求！");
             brpc::ClosureGuard rpc_guard(done);
             auto err_response = [this, response](const std::string &rid, 
                 const std::string &errmsg) -> void {
@@ -264,21 +261,21 @@ class UserServiceImpl : public wei_im::UserService {
                 response->set_errmsg(errmsg);
                 return;
             };
-            // 1. 从请求中取出邮箱和验证码 ID，以及验证码。
-            std::string email = request->email();
+            // 1. 从请求中取出手机号码和验证码 ID，以及验证码。
+            std::string phone = request->phone_number();
             std::string code_id = request->verify_code_id();
             std::string code = request->verify_code();
-            // 2. 检查邮箱格式是否合法
-            bool ret = email_check(email);
+            // 2. 检查注册手机号码是否合法
+            bool ret = phone_check(phone);
             if (ret == false) {
-                LOG_ERROR("{} - 邮箱格式错误 - {}！", request->request_id(), email);
-                return err_response(request->request_id(), "邮箱格式错误!");
+                LOG_ERROR("{} - 手机号码格式错误 - {}！", request->request_id(), phone);
+                return err_response(request->request_id(), "手机号码格式错误!");
             }
-            // 3. 根据邮箱从数据库进行用户信息查询，判断用户是否存在
-            auto user = _mysql_user->select_by_email(email);
+            // 3. 根据手机号从数据数据进行用户信息查询，判断用用户是否存在
+            auto user = _mysql_user->select_by_phone(phone);
             if (!user) {
-                LOG_ERROR("{} - 该邮箱未注册用户 - {}！", request->request_id(), email);
-                return err_response(request->request_id(), "该邮箱未注册用户!");
+                LOG_ERROR("{} - 该手机号未注册用户 - {}！", request->request_id(), phone);
+                return err_response(request->request_id(), "该手机号未注册用户!");
             }
             // 4. 从 redis 数据库中进行验证码 ID-验证码一致性匹配
             auto vcode = _redis_codes->code(code_id);
@@ -290,7 +287,7 @@ class UserServiceImpl : public wei_im::UserService {
             // 5. 根据 redis 中的登录标记信息是否存在判断用户是否已经登录。
             ret = _redis_status->exists(user->user_id());
             if (ret == true) {
-                LOG_ERROR("{} - 用户已在其他地方登录 - {}！", request->request_id(), email);
+                LOG_ERROR("{} - 用户已在其他地方登录 - {}！", request->request_id(), phone);
                 return err_response(request->request_id(), "用户已在其他地方登录!");
             }
             //4. 构造会话 ID，生成会话键值对，向 redis 中添加会话信息以及登录标记信息
@@ -330,7 +327,7 @@ class UserServiceImpl : public wei_im::UserService {
             user_info->set_user_id(user->user_id());
             user_info->set_nickname(user->nickname());
             user_info->set_description(user->description());
-            user_info->set_email(user->email());
+            user_info->set_phone(user->phone());
             
             if (!user->avatar_id().empty()) {
                 //从信道管理对象中，获取到连接了文件管理子服务的channel
@@ -413,7 +410,7 @@ class UserServiceImpl : public wei_im::UserService {
                 user_info.set_user_id(user.user_id());
                 user_info.set_nickname(user.nickname());
                 user_info.set_description(user.description());
-                user_info.set_email(user.email());
+                user_info.set_phone(user.phone());
                 user_info.set_avatar((*file_map)[user.avatar_id()].file_content());
                 (*user_map)[user_info.user_id()] = user_info;
             }
@@ -469,7 +466,7 @@ class UserServiceImpl : public wei_im::UserService {
                 return err_response(request->request_id(), "更新数据库用户头像ID失败!");
             }
             // 5. 更新 ES 服务器中用户信息
-            ret = _es_user->appendData(user->user_id(), user->email(),
+            ret = _es_user->appendData(user->user_id(), user->phone(),
                 user->nickname(), user->description(), user->avatar_id());
             if (ret == false) {
                 LOG_ERROR("{} - 更新搜索引擎用户头像ID失败 ：{}！", request->request_id(), avatar_id);
@@ -515,7 +512,7 @@ class UserServiceImpl : public wei_im::UserService {
                 return err_response(request->request_id(), "更新数据库用户昵称失败!");
             }
             // 5. 更新 ES 服务器中用户信息
-            ret = _es_user->appendData(user->user_id(), user->email(),
+            ret = _es_user->appendData(user->user_id(), user->phone(),
                 user->nickname(), user->description(), user->avatar_id());
             if (ret == false) {
                 LOG_ERROR("{} - 更新搜索引擎用户昵称失败 ：{}！", request->request_id(), new_nickname);
@@ -555,7 +552,7 @@ class UserServiceImpl : public wei_im::UserService {
                 return err_response(request->request_id(), "更新数据库用户签名失败!");
             }
             // 5. 更新 ES 服务器中用户信息
-            ret = _es_user->appendData(user->user_id(), user->email(),
+            ret = _es_user->appendData(user->user_id(), user->phone(),
                 user->nickname(), user->description(), user->avatar_id());
             if (ret == false) {
                 LOG_ERROR("{} - 更新搜索引擎用户签名失败 ：{}！", request->request_id(), new_description);
@@ -565,11 +562,11 @@ class UserServiceImpl : public wei_im::UserService {
             response->set_request_id(request->request_id());
             response->set_success(true);
         }
-        virtual void SetUserEmail(::google::protobuf::RpcController* controller,
-            const ::wei_im::SetUserEmailReq* request,
-            ::wei_im::SetUserEmailRsp* response,
+        virtual void SetUserPhoneNumber(::google::protobuf::RpcController* controller,
+            const ::wei_im::SetUserPhoneNumberReq* request,
+            ::wei_im::SetUserPhoneNumberRsp* response,
             ::google::protobuf::Closure* done){
-            LOG_DEBUG("收到用户邮箱设置请求！");
+            LOG_DEBUG("收到用户手机号设置请求！");
             brpc::ClosureGuard rpc_guard(done);
             auto err_response = [this, response](const std::string &rid, 
                 const std::string &errmsg) -> void {
@@ -578,11 +575,11 @@ class UserServiceImpl : public wei_im::UserService {
                 response->set_errmsg(errmsg);
                 return;
             };
-            // 1. 从请求中取出用户 ID 与新的邮箱
+            // 1. 从请求中取出用户 ID 与新的昵称
             std::string uid = request->user_id();
-            std::string new_email = request->email();
-            std::string code = request->email_verify_code();
-            std::string code_id = request->email_verify_code_id();
+            std::string new_phone = request->phone_number();
+            std::string code = request->phone_verify_code();
+            std::string code_id = request->phone_verify_code_id();
             // 2. 对验证码进行验证
             auto vcode = _redis_codes->code(code_id);
             if (vcode != code) {
@@ -595,19 +592,19 @@ class UserServiceImpl : public wei_im::UserService {
                 LOG_ERROR("{} - 未找到用户信息 - {}！", request->request_id(), uid);
                 return err_response(request->request_id(), "未找到用户信息!");
             }
-            // 4. 将新的邮箱更新到数据库中
-            user->email(new_email);
+            // 4. 将新的昵称更新到数据库中
+            user->phone(new_phone);
             bool ret = _mysql_user->update(user);
             if (ret == false) {
-                LOG_ERROR("{} - 更新数据库用户邮箱失败 ：{}！", request->request_id(), new_email);
-                return err_response(request->request_id(), "更新数据库用户邮箱失败!");
+                LOG_ERROR("{} - 更新数据库用户手机号失败 ：{}！", request->request_id(), new_phone);
+                return err_response(request->request_id(), "更新数据库用户手机号失败!");
             }
             // 5. 更新 ES 服务器中用户信息
-            ret = _es_user->appendData(user->user_id(), user->email(),
+            ret = _es_user->appendData(user->user_id(), user->phone(),
                 user->nickname(), user->description(), user->avatar_id());
             if (ret == false) {
-                LOG_ERROR("{} - 更新搜索引擎用户邮箱失败 ：{}！", request->request_id(), new_email);
-                return err_response(request->request_id(), "更新搜索引擎用户邮箱失败!");
+                LOG_ERROR("{} - 更新搜索引擎用户手机号失败 ：{}！", request->request_id(), new_phone);
+                return err_response(request->request_id(), "更新搜索引擎用户手机号失败!");
             }
             // 6. 组织响应，返回更新成功与否
             response->set_request_id(request->request_id());
@@ -660,8 +657,9 @@ class UserServerBuilder {
         void make_es_object(const std::vector<std::string> host_list) {
             _es_client = ESClientFactory::create(host_list);
         }
-        void make_dms_object(const std::string &proxy_url) {
-            _dms_client = std::make_shared<DMSClient>(proxy_url);
+        void make_dms_object(const std::string &access_key_id,
+            const std::string &access_key_secret) {
+            _dms_client = std::make_shared<DMSClient>(access_key_id, access_key_secret);
         }
         //构造mysql客户端对象
         void make_mysql_object(
@@ -718,7 +716,7 @@ class UserServerBuilder {
                 abort();
             }
             if (!_dms_client) {
-                LOG_ERROR("还未初始化邮件平台模块！");
+                LOG_ERROR("还未初始化短信平台模块！");
                 abort();
             }
             _rpc_server = std::make_shared<brpc::Server>();

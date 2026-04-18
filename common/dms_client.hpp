@@ -6,7 +6,7 @@
 #include <curl/curl.h>
 #include "logger.hpp"
 
-namespace bite_im{
+namespace wei_im{
 class DMSClient {
 public:
     using ptr = std::shared_ptr<DMSClient>;

@@ -34,8 +34,7 @@ DEFINE_int32(redis_db, 0, "Redis默认库号");
 DEFINE_bool(redis_keep_alive, true, "Redis长连接保活选项");
 
 
-DEFINE_string(dms_key_id, "LTAI5tSEtdmRhGrMKRxMcGDT", "短信平台密钥ID");
-DEFINE_string(dms_key_secret, "PLkerQWFfewCcbRzE4d34Y2S1cTHl4", "短信平台密钥");
+DEFINE_string(email_proxy_url, "http://127.0.0.1:8888/send_email", "邮件验证码代理服务URL");
 
 
 int main(int argc, char *argv[])
@@ -44,7 +43,7 @@ int main(int argc, char *argv[])
     wei_im::init_logger(FLAGS_run_mode, FLAGS_log_file, FLAGS_log_level);
 
     wei_im::UserServerBuilder usb;
-    usb.make_dms_object(FLAGS_dms_key_id, FLAGS_dms_key_secret);
+    usb.make_dms_object(FLAGS_email_proxy_url);
     usb.make_es_object({FLAGS_es_host});
     usb.make_mysql_object(FLAGS_mysql_user, FLAGS_mysql_pswd, FLAGS_mysql_host, 
         FLAGS_mysql_db, FLAGS_mysql_cset, FLAGS_mysql_port, FLAGS_mysql_pool_count);

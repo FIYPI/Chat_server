@@ -12,9 +12,9 @@ class User {
         //用户名--新增用户 -- 用户ID, 昵称，密码
         User(const std::string &uid, const std::string &nickname, const std::string &password):
             _user_id(uid), _nickname(nickname), _password(password){}
-        //手机号--新增用户 -- 用户ID, 手机号, 随机昵称
-        User(const std::string &uid, const std::string &phone):
-            _user_id(uid), _nickname(uid), _phone(phone){}
+        //邮箱--新增用户 -- 用户ID, 邮箱, 随机昵称
+        User(const std::string &uid, const std::string &email):
+            _user_id(uid), _nickname(uid), _email(email){}
         
         void user_id(const std::string &val) { _user_id = val; }
         std::string user_id() { return _user_id; }
@@ -37,11 +37,11 @@ class User {
         }
         void password(const std::string &val) { _password = val; }
 
-        std::string phone() { 
-            if (!_phone) return std::string();
-            return *_phone; 
+        std::string email() { 
+            if (!_email) return std::string();
+            return *_email; 
         }
-        void phone(const std::string &val) { _phone = val; }
+        void email(const std::string &val) { _email = val; }
 
         std::string avatar_id() { 
             if (!_avatar_id) return std::string();
@@ -59,8 +59,8 @@ class User {
         odb::nullable<std::string> _description; //用户签名 - 不一定存在
         #pragma db type("varchar(64)")
         odb::nullable<std::string> _password; //用户密码 - 不一定存在
-        #pragma db type("varchar(64)") index unique
-        odb::nullable<std::string> _phone; //用户手机号 - 不一定存在
+        #pragma db type("varchar(128)") index unique
+        odb::nullable<std::string> _email; //用户邮箱 - 不一定存在
         #pragma db type("varchar(64)")
         odb::nullable<std::string> _avatar_id; //用户头像文件ID - 不一定存在
 };

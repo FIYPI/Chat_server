@@ -42,16 +42,16 @@ class UserTable {
             }
             return res;
         }
-        std::shared_ptr<User> select_by_phone(const std::string &phone) {
+        std::shared_ptr<User> select_by_email(const std::string &email) {
             std::shared_ptr<User> res;
             try {
                 odb::transaction trans(_db->begin());
                 typedef odb::query<User> query;
                 typedef odb::result<User> result;
-                res.reset(_db->query_one<User>(query::phone == phone));
+                res.reset(_db->query_one<User>(query::email == email));
                 trans.commit();
             }catch (std::exception &e) {
-                LOG_ERROR("通过手机号查询用户失败 {}:{}！", phone, e.what());
+                LOG_ERROR("通过邮箱查询用户失败 {}:{}！", email, e.what());
             }
             return res;
         }

@@ -19,16 +19,16 @@
 
 
 namespace wei_im{
-    #define GET_PHONE_VERIFY_CODE   "/service/user/get_phone_verify_code"
+    #define GET_EMAIL_VERIFY_CODE   "/service/user/get_email_verify_code"
     #define USERNAME_REGISTER       "/service/user/username_register"
     #define USERNAME_LOGIN          "/service/user/username_login"
-    #define PHONE_REGISTER          "/service/user/phone_register"
-    #define PHONE_LOGIN             "/service/user/phone_login"
+    #define EMAIL_REGISTER          "/service/user/email_register"
+    #define EMAIL_LOGIN             "/service/user/email_login"
     #define GET_USERINFO            "/service/user/get_user_info"
     #define SET_USER_AVATAR         "/service/user/set_avatar"
     #define SET_USER_NICKNAME       "/service/user/set_nickname"
     #define SET_USER_DESC           "/service/user/set_description"
-    #define SET_USER_PHONE          "/service/user/set_phone"
+    #define SET_USER_EMAIL          "/service/user/set_email"
     #define FRIEND_GET_LIST         "/service/friend/get_friend_list"
     #define FRIEND_APPLY            "/service/friend/add_friend_apply"
     #define FRIEND_APPLY_PROCESS    "/service/friend/add_friend_process"
@@ -85,16 +85,16 @@ namespace wei_im{
                 _ws_server.listen(websocket_port);
                 _ws_server.start_accept();
 
-                _http_server.Post(GET_PHONE_VERIFY_CODE  , (httplib::Server::Handler)std::bind(&GatewayServer::GetPhoneVerifyCode         , this, std::placeholders::_1, std::placeholders::_2));
+                _http_server.Post(GET_EMAIL_VERIFY_CODE  , (httplib::Server::Handler)std::bind(&GatewayServer::GetEmailVerifyCode         , this, std::placeholders::_1, std::placeholders::_2));
                 _http_server.Post(USERNAME_REGISTER      , (httplib::Server::Handler)std::bind(&GatewayServer::UserRegister               , this, std::placeholders::_1, std::placeholders::_2));
                 _http_server.Post(USERNAME_LOGIN         , (httplib::Server::Handler)std::bind(&GatewayServer::UserLogin                  , this, std::placeholders::_1, std::placeholders::_2));
-                _http_server.Post(PHONE_REGISTER         , (httplib::Server::Handler)std::bind(&GatewayServer::PhoneRegister              , this, std::placeholders::_1, std::placeholders::_2));
-                _http_server.Post(PHONE_LOGIN            , (httplib::Server::Handler)std::bind(&GatewayServer::PhoneLogin                 , this, std::placeholders::_1, std::placeholders::_2));
+                _http_server.Post(EMAIL_REGISTER         , (httplib::Server::Handler)std::bind(&GatewayServer::EmailRegister              , this, std::placeholders::_1, std::placeholders::_2));
+                _http_server.Post(EMAIL_LOGIN            , (httplib::Server::Handler)std::bind(&GatewayServer::EmailLogin                 , this, std::placeholders::_1, std::placeholders::_2));
                 _http_server.Post(GET_USERINFO           , (httplib::Server::Handler)std::bind(&GatewayServer::GetUserInfo                , this, std::placeholders::_1, std::placeholders::_2));
                 _http_server.Post(SET_USER_AVATAR        , (httplib::Server::Handler)std::bind(&GatewayServer::SetUserAvatar              , this, std::placeholders::_1, std::placeholders::_2));
                 _http_server.Post(SET_USER_NICKNAME      , (httplib::Server::Handler)std::bind(&GatewayServer::SetUserNickname            , this, std::placeholders::_1, std::placeholders::_2));
                 _http_server.Post(SET_USER_DESC          , (httplib::Server::Handler)std::bind(&GatewayServer::SetUserDescription         , this, std::placeholders::_1, std::placeholders::_2));
-                _http_server.Post(SET_USER_PHONE         , (httplib::Server::Handler)std::bind(&GatewayServer::SetUserPhoneNumber         , this, std::placeholders::_1, std::placeholders::_2));
+                _http_server.Post(SET_USER_EMAIL         , (httplib::Server::Handler)std::bind(&GatewayServer::SetUserEmail               , this, std::placeholders::_1, std::placeholders::_2));
                 _http_server.Post(FRIEND_GET_LIST        , (httplib::Server::Handler)std::bind(&GatewayServer::GetFriendList              , this, std::placeholders::_1, std::placeholders::_2));
                 _http_server.Post(FRIEND_APPLY           , (httplib::Server::Handler)std::bind(&GatewayServer::FriendAdd                  , this, std::placeholders::_1, std::placeholders::_2));
                 _http_server.Post(FRIEND_APPLY_PROCESS   , (httplib::Server::Handler)std::bind(&GatewayServer::FriendAddProcess           , this, std::placeholders::_1, std::placeholders::_2));
@@ -177,10 +177,10 @@ namespace wei_im{
                 LOG_DEBUG("新增长连接管理：{}-{}-{}", ssid, *uid, (size_t)conn.get());
                 keepAlive(conn);
             }
-            void GetPhoneVerifyCode(const httplib::Request &request, httplib::Response &response) {
+            void GetEmailVerifyCode(const httplib::Request &request, httplib::Response &response) {
                 //1. 取出http请求正文，将正文进行反序列化
-                PhoneVerifyCodeReq req;
-                PhoneVerifyCodeRsp rsp;
+                EmailVerifyCodeReq req;
+                EmailVerifyCodeRsp rsp;
                 auto err_response = [&req, &rsp, &response](const std::string &errmsg) -> void {
                     rsp.set_success(false);
                     rsp.set_errmsg(errmsg);
@@ -188,8 +188,8 @@ namespace wei_im{
                 };
                 bool ret = req.ParseFromString(request.body);
                 if (ret == false) {
-                    LOG_ERROR("获取短信验证码请求正文反序列化失败！");
-                    return err_response("获取短信验证码请求正文反序列化失败！");
+                    LOG_ERROR("获取邮箱验证码请求正文反序列化失败！");
+                    return err_response("获取邮箱验证码请求正文反序列化失败！");
                 }
                 //2. 将请求转发给用户子服务进行业务处理
                 auto channel = _mm_channels->choose(_user_service_name);
@@ -199,7 +199,7 @@ namespace wei_im{
                 }
                 wei_im::UserService_Stub stub(channel.get());
                 brpc::Controller cntl;
-                stub.GetPhoneVerifyCode(&cntl, &req, &rsp, nullptr);
+                stub.GetEmailVerifyCode(&cntl, &req, &rsp, nullptr);
                 if (cntl.Failed()) {
                     LOG_ERROR("{} 用户子服务调用失败！", req.request_id());
                     return err_response("用户子服务调用失败！");
@@ -267,10 +267,10 @@ namespace wei_im{
                 //3. 得到用户子服务的响应后，将响应内容进行序列化作为http响应正文
                 response.set_content(rsp.SerializeAsString(), "application/x-protbuf");
             }
-            void PhoneRegister(const httplib::Request &request, httplib::Response &response) {
+            void EmailRegister(const httplib::Request &request, httplib::Response &response) {
                 //1. 取出http请求正文，将正文进行反序列化
-                PhoneRegisterReq req;
-                PhoneRegisterRsp rsp;
+                EmailRegisterReq req;
+                EmailRegisterRsp rsp;
                 auto err_response = [&req, &rsp, &response](const std::string &errmsg) -> void {
                     rsp.set_success(false);
                     rsp.set_errmsg(errmsg);
@@ -278,8 +278,8 @@ namespace wei_im{
                 };
                 bool ret = req.ParseFromString(request.body);
                 if (ret == false) {
-                    LOG_ERROR("手机号注册请求正文反序列化失败！");
-                    return err_response("手机号注册请求正文反序列化失败！");
+                    LOG_ERROR("邮箱注册请求正文反序列化失败！");
+                    return err_response("邮箱注册请求正文反序列化失败！");
                 }
                 //2. 将请求转发给用户子服务进行业务处理
                 auto channel = _mm_channels->choose(_user_service_name);
@@ -289,7 +289,7 @@ namespace wei_im{
                 }
                 wei_im::UserService_Stub stub(channel.get());
                 brpc::Controller cntl;
-                stub.PhoneRegister(&cntl, &req, &rsp, nullptr);
+                stub.EmailRegister(&cntl, &req, &rsp, nullptr);
                 if (cntl.Failed()) {
                     LOG_ERROR("{} 用户子服务调用失败！", req.request_id());
                     return err_response("用户子服务调用失败！");
@@ -297,10 +297,10 @@ namespace wei_im{
                 //3. 得到用户子服务的响应后，将响应内容进行序列化作为http响应正文
                 response.set_content(rsp.SerializeAsString(), "application/x-protbuf");
             }
-            void PhoneLogin(const httplib::Request &request, httplib::Response &response) {
+            void EmailLogin(const httplib::Request &request, httplib::Response &response) {
                 //1. 取出http请求正文，将正文进行反序列化
-                PhoneLoginReq req;
-                PhoneLoginRsp rsp;
+                EmailLoginReq req;
+                EmailLoginRsp rsp;
                 auto err_response = [&req, &rsp, &response](const std::string &errmsg) -> void {
                     rsp.set_success(false);
                     rsp.set_errmsg(errmsg);
@@ -308,8 +308,8 @@ namespace wei_im{
                 };
                 bool ret = req.ParseFromString(request.body);
                 if (ret == false) {
-                    LOG_ERROR("手机号登录请求正文反序列化失败！");
-                    return err_response("手机号登录请求正文反序列化失败！");
+                    LOG_ERROR("邮箱登录请求正文反序列化失败！");
+                    return err_response("邮箱登录请求正文反序列化失败！");
                 }
                 //2. 将请求转发给用户子服务进行业务处理
                 auto channel = _mm_channels->choose(_user_service_name);
@@ -319,7 +319,7 @@ namespace wei_im{
                 }
                 wei_im::UserService_Stub stub(channel.get());
                 brpc::Controller cntl;
-                stub.PhoneLogin(&cntl, &req, &rsp, nullptr);
+                stub.EmailLogin(&cntl, &req, &rsp, nullptr);
                 if (cntl.Failed()) {
                     LOG_ERROR("{} 用户子服务调用失败！", req.request_id());
                     return err_response("用户子服务调用失败！");
@@ -479,10 +479,10 @@ namespace wei_im{
                 //3. 得到用户子服务的响应后，将响应内容进行序列化作为http响应正文
                 response.set_content(rsp.SerializeAsString(), "application/x-protbuf");
             }
-            void SetUserPhoneNumber(const httplib::Request &request, httplib::Response &response) {
+            void SetUserEmail(const httplib::Request &request, httplib::Response &response) {
                 //1. 取出http请求正文，将正文进行反序列化
-                SetUserPhoneNumberReq req;
-                SetUserPhoneNumberRsp rsp;
+                SetUserEmailReq req;
+                SetUserEmailRsp rsp;
                 auto err_response = [&req, &rsp, &response](const std::string &errmsg) -> void {
                     rsp.set_success(false);
                     rsp.set_errmsg(errmsg);
@@ -490,8 +490,8 @@ namespace wei_im{
                 };
                 bool ret = req.ParseFromString(request.body);
                 if (ret == false) {
-                    LOG_ERROR("用户手机号设置请求正文反序列化失败！");
-                    return err_response("用户手机号设置请求正文反序列化失败！");
+                    LOG_ERROR("用户邮箱设置请求正文反序列化失败！");
+                    return err_response("用户邮箱设置请求正文反序列化失败！");
                 }
                 //2. 客户端身份识别与鉴权
                 std::string ssid = req.session_id();
@@ -509,7 +509,7 @@ namespace wei_im{
                 }
                 wei_im::UserService_Stub stub(channel.get());
                 brpc::Controller cntl;
-                stub.SetUserPhoneNumber(&cntl, &req, &rsp, nullptr);
+                stub.SetUserEmail(&cntl, &req, &rsp, nullptr);
                 if (cntl.Failed()) {
                     LOG_ERROR("{} 用户子服务调用失败！", req.request_id());
                     return err_response("用户子服务调用失败！");
